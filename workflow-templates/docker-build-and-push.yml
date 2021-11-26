@@ -1,4 +1,4 @@
-name: Build docker image and push to ECR
+name: Build docker image and push to Miso ECR
 
 on:
   push:
