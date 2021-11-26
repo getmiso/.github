@@ -2,8 +2,6 @@
     "name": "Build Docker image",
     "description": "Workflow to build docker image and push to Miso ECR",
     "iconName": "docker",
-    "categories": [
-    ],
     "filePatterns": [
         "^Dockerfile"
     ]
