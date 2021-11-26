@@ -1,0 +1,8 @@
+{
+    "name": "Deploy using serverless",
+    "description": "Workflow to deploy function to AWS Lambda",
+    "iconName": "serverless",
+    "filePatterns": [
+        "^serverless.yml"
+    ]
+}
