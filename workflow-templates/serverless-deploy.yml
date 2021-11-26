@@ -1,0 +1,42 @@
+name: Build docker image and push to Miso ECR
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+
+env:
+  STAGE: ${{ github.event.inputs.stage }}
+  IMAGE_NAME:
+  # Image name to build and push. Omit ECR registry and tag.
+  SERVICE_NAME:
+  # Service name of the stack
+  CONFIG_NAME:
+  # Prefix of parameter store name usually starts with /config/
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Prepare .env file
+        uses: nohmad/aws-ssm-parameter-store-action@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+          path: ${{env.CONFIG_NAME}}/${{env.STAGE}}/
+          format: dotenv
+          filename: .env.${{env.STAGE}}
+
+  serverless-deploy:
+    name: Deploy to AWS Lambda
+    needs: setup
+    uses: getmiso/.github/workflows/serverless-deploy.yml@main
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      stage: ${{ env.STAGE }}

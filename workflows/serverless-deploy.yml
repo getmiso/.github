@@ -1,0 +1,44 @@
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node version to install
+        default: "14.x"
+        type: string
+      stage:
+        description: Stage to deploy
+        required: true
+        type: string
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+      aws-region:
+        required: true
+        default: ap-northeast-2
+
+jobs:
+  serverless-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{inputs.node-version}}
+
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+
+      - name: Run command serverless deploy
+        run: |
+          set -eux
+          npx sls config credentials --stage ${{inputs.stage}} --provider aws \
+            --key ${{ secrets.aws-access-key-id }} --secret ${{ secrets.aws-secret-access-key }}
+          npx sls deploy --stage ${{inputs.stage}}

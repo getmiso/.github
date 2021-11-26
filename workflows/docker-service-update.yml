@@ -1,0 +1,56 @@
+on:
+  workflow_call:
+    inputs:
+      server-name:
+        description: Target ec2-instance-name to run command
+        required: true
+        type: string
+      image:
+        description: Image tag to pull
+        required: true
+        type: string
+      service-name:
+        description: Service name to update
+        required: true
+        type: string
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+      aws-region:
+        required: true
+        default: ap-northeast-2
+
+jobs:
+  docker-service-update:
+    name: Run command docker service update
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Run docker service update
+      id: send-command
+      uses: nohmad/aws-ssm-send-command-action@master
+      with:
+        aws-access-key-id: ${{secrets.aws-access-key-id}}
+        aws-secret-access-key: ${{secrets.aws-secret-access-key}}
+        aws-region: ${{secrets.aws-region}}
+        targets: |
+          [{"Key": "tag:Name", "Values": ["${{inputs.server-name}}"]}]
+        document-name: AWS-RunShellScript
+        parameters: |
+          {
+            "commands": [
+              "cat <<END | su -s /bin/bash ssm-user",
+              "docker system prune --force",
+              "docker service update --quiet --image ${{inputs.image}} \\",
+              "  --with-registry-auth --update-failure-action rollback ${{inputs.service-name}}",
+              "docker service inspect --format '{{.UpdatedAt}}' ${{inputs.service-name}}",
+              "END"
+            ]
+          }
+
+    - name: Verify docker service update
+      run: |
+        echo "${{toJSON(steps.send-command.outputs)}}" | grep -v ERROR
+

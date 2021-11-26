@@ -6,9 +6,44 @@ on:
   pull_request:
     branches: [ $default-branch ]
 
+env:
+  STAGE: ${{ github.event.inputs.stage }}
+  IMAGE_NAME:
+  # Image name to build and push. Omit ECR registry and tag.
+  SERVICE_NAME:
+  # Service name of the stack
+
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Prepare target server
+        id: target
+        run: |
+          declare -A SERVER_NAME=([staging]=... [production]=...)
+          echo "::set-output name=server-name::${SERVER_NAME[${{env.STAGE}}]}"
+
+  docker-build-and-push:
+    name: Build and push docker image
+    needs: setup
+    uses: getmiso/.github/workflows/docker-build-and-push.yml@main
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      repository: ${{env.IMAGE_NAME}}
+      tag: ${{env.STAGE}}
+      parameter-store-prefix: /config/blink/${{env.STAGE}}
+
+  docker-service-update:
+    name: Run docker service update
+    needs: docker-build-and-push
+    uses: getmiso/.github/workflows/docker-service-update.yml@main
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      server-name: ${{jobs.setup.outputs.server-name}}
+      service-name: ${{jobs.setup.env.SERVICE_NAME}}
+      image: ${{needs.docker-build-and-push.outputs.image}}
