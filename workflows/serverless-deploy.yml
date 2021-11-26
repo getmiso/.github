@@ -5,6 +5,7 @@ on:
         description: Node version to install
         default: "14.x"
         type: string
+        required: false
       stage:
         description: Stage to deploy
         required: true
@@ -16,7 +17,6 @@ on:
         required: true
       aws-region:
         required: true
-        default: ap-northeast-2
 
 jobs:
   serverless-deploy:

@@ -20,7 +20,6 @@ on:
         required: true
       aws-region:
         required: true
-        default: ap-northeast-2
 
 jobs:
   docker-service-update:

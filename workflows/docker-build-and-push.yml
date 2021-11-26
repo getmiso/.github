@@ -5,6 +5,7 @@ on:
         description: Set false if the repository contains its own registry name, e.g. `localhost:5000/my-repo`, not miso ECR
         default: true
         type: boolean
+        required: false
       repository:
         description: Docker repository name. Do not include registry name, e.g. `miso/blink`
         required: true
@@ -13,17 +14,17 @@ on:
         description: Tag to push. Git SHA will be appended to the tag like `tag-345abcd` automatically.
         default: latest
         type: string
+        required: false
       context:
         description: Context to build docker image
         default: .
         type: string
+        required: false
       dockerfile:
         description: File to build docker image
         default: ./Dockerfile
         type: string
-      parameter-store-prefix:
-        description: Prefix of parameters to generate .env file
-        type: string
+        required: false
     outputs:
       image:
         description: Image name to push
@@ -42,7 +43,7 @@ on:
         required: true
       aws-region:
         description: AWS region
-        default: ap-northeast-2
+        required: false
 
 jobs:
   docker-build-and-push:
